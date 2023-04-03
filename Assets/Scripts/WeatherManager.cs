@@ -19,6 +19,7 @@ public class WeatherManager : MonoBehaviour
     [SerializeField] private  TextMeshProUGUI _minTemperature;
     [SerializeField] private  TextMeshProUGUI _description;    
     [SerializeField] private  TextMeshProUGUI _clockText;
+    [SerializeField] private  TextMeshProUGUI _errorText;
     [SerializeField] private  GameObject _weatherIcon;
     [SerializeField] private GameObject _clearSkyPrefab;
     [SerializeField] private GameObject _fewCloudsPrefab;
@@ -29,8 +30,13 @@ public class WeatherManager : MonoBehaviour
     [SerializeField] private GameObject _thunderstormPrefab;
     [SerializeField] private GameObject _snowPrefab;
     [SerializeField] private GameObject _mistPrefab;
+    [SerializeField] private GameObject _errorPopup;
     // API key to use for accessing weather data
     private const string API_KEY = "d14443c053f8af72324b73b898e4dbbb"; 
+    
+    //Animation names for reference
+    private const string SHOWER_ANIM = "ShowerRainAnimation"; 
+    private const string RAIN_ANIM = "RainAnimation"; 
 
     // Animators for some of the weather icons
     private Animator _showerRainAnimator;
@@ -55,6 +61,7 @@ public class WeatherManager : MonoBehaviour
     {
         if (_clockText != null) 
         {
+            //Convert Time to dd-MM-yy HH:mm:ss format
             _clockText.text = DateTime.Now.ToString("dd-MM-yy HH:mm:ss");
         }
     }
@@ -104,7 +111,6 @@ public class WeatherManager : MonoBehaviour
     /// </summary>
     /// <param name="cityId"> The name of the city to retrieve weather data for.</param>
     /// <returns></returns>
-
     IEnumerator GetWeatherData(int cityId)
     {
         // Set the API endpoint URL with the provided API key and the city name parameter
@@ -127,13 +133,13 @@ public class WeatherManager : MonoBehaviour
             if (ex.Status == WebExceptionStatus.Timeout)
             {
                  // Handle timeout error by logging a message and stopping the coroutine
-                Debug.Log("The request timed out. Please try again later.");
+                HandleWeatherAPIError("The request to the weather API timed out. Please try again later.");
                 yield break;
             }
             else
             {
                 // If it's not a timeout error, handle other errors by logging the message
-                Debug.Log("An error occurred: " + ex.Message);
+                HandleWeatherAPIError("There was an error connecting to the weather API. Please try again later." + ex.Message);
             }
         }
 
@@ -234,12 +240,25 @@ public class WeatherManager : MonoBehaviour
         if(prefab == _showerRainPrefab)
         {
             _showerRainAnimator = _weatherIcon.GetComponent<Animator>();        
-            _showerRainAnimator.Play("ShowerRainAnimation");
+            _showerRainAnimator.Play(SHOWER_ANIM);
         }
         if(prefab == _rainPrefab)
         {
             _rainAnimator = _weatherIcon.GetComponent<Animator>();
-            _rainAnimator.Play("RainAnimation");
+            _rainAnimator.Play(RAIN_ANIM);
         }
+    }
+
+    public void HandleWeatherAPIError(string errorMessage)
+    {
+        // Display the error message to the user
+        Debug.LogError(errorMessage);
+        _errorPopup.SetActive(true);
+        _errorText.text = errorMessage;
+    }
+
+    public void HideErrorPopup()
+    {
+        _errorPopup.SetActive(false);
     }
 }
